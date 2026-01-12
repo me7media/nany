@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+TTS==0.22.0
+numpy<2
+librosa
+soundfile
