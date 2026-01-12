@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Мульт-няня</title>
+
+    <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+
+<div class="wrap">
+
+    <div class="panel">
+        <div class="title">
+            Мульт-няня
+            <span class="badge" id="badge">Я готова 😊</span>
+
+             <label style="margin-top:8px;font-size:12px;">
+                <input type="checkbox" id="voiceOn" checked />
+                Озвучувати
+            </label>
+        </div>
+
+        <!-- 🔁 Перемикач персонажа -->
+        <div class="characterBar">
+            <label class="selectLabel" for="characterSelect">Персонаж:</label>
+            <select id="characterSelect" class="select">
+                <option value="princess" selected>👸 Принцеса</option>
+                <option value="bunny">🐰 Зайчик</option>
+                <option value="robot">🤖 Робот</option>
+            </select>
+        </div>
+
+        <div class="nannyBox">
+            <div id="character"></div>
+
+            <div class="btnRow">
+                <button id="btnStory">Казка</button>
+                <button id="btnGame">Гра</button>
+                <button id="btnCalm">Заспокоїтись</button>
+                <button id="btnListen">🎤 Говорити</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel chat">
+        <div class="title">Чат</div>
+        <div class="log" id="log"></div>
+
+        <div class="composer">
+            <input id="input" placeholder="Напиши або скажи щось…" />
+            <button id="send">Надіслати</button>
+        </div>
+    </div>
+
+</div>
+
+<audio id="ttsPlayer"></audio>
+
+<script type="module" src="/main.js"></script>
+
+</body>
+</html>
