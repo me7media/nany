@@ -1,12 +1,12 @@
-'use strict';
+import express from 'express';
+import path from 'path';
+import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
 
-const path = require('path');
-const express = require('express');
-const fetch = (...args) =>
-    import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -15,51 +15,26 @@ app.post('/api/nanny', async (req, res) =>
     try
     {
         const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey)
-        {
-            return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
-        }
+        const ttsUrl = process.env.TTS_URL;
 
-        const history   = Array.isArray(req.body?.history) ? req.body.history : [];
-        const mode      = req.body?.mode || 'chat';
-        const character = req.body?.character || 'princess';
+        const { history = [], mode = 'chat', character = 'princess' } = req.body;
 
-        if (history.length === 0)
-        {
-            return res.json({
-                text: 'Привіт! Я тут 💜',
-                audio: null
-            });
-        }
-
-        /* 🔵 БАЗОВІ ІНСТРУКЦІЇ */
-        const systemPrompt = `
+        const instructions = `
 Ти — добра, жива мульт-няня для дитини 5–8 років.
 Говори українською мовою.
 НЕ повторюйся.
 Памʼятай, що дитина вже чула твої попередні відповіді.
 Старайся відповідати по суті питання.
 Будь теплою, але не шаблонною.
-`.trim();
+        `.trim();
 
-        const modePrompt = {
-            chat: 'Веди природну розмову.',
-            story: 'Розкажи коротку добру казку.',
-            game: 'Запропонуй просту інтерактивну гру.',
-            calm: 'Допоможи заспокоїтись.',
-        }[mode] || 'Будь лагідною.';
-
-        /* 🔵 ПРАВИЛЬНИЙ PAYLOAD З ІСТОРІЄЮ */
         const payload = {
             model: 'gpt-4.1-mini',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'system', content: modePrompt },
-                ...history
-            ]
+            input: instructions + '\n' +
+                history.map(m => `${m.role}: ${m.content}`).join('\n')
         };
 
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        const r = await fetch('https://api.openai.com/v1/responses', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -69,46 +44,38 @@ app.post('/api/nanny', async (req, res) =>
         });
 
         const data = await r.json();
-        const answer =
-            data.choices?.[0]?.message?.content?.trim() ||
-            'Я тут, сонечко 🙂';
+        const answer = data.output_text || 'Я тут, сонечко 🙂';
 
-        /* 🔊 TTS (не ламаємо, але без фанатизму) */
         let audio = null;
 
-        try
+        if (ttsUrl)
         {
-            const ttsRes = await fetch('http://localhost:5001/tts', {
+            const tts = await fetch(`${ttsUrl}/tts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: answer, character })
             });
 
-            if (ttsRes.ok)
+            if (tts.ok)
             {
-                const ttsData = await ttsRes.json();
-                audio = ttsData.url || null;
+                const ttsData = await tts.json();
+                audio = ttsData.url;
             }
         }
-        catch (e)
-        {
-            // fallback на браузер
-        }
 
-        return res.json({ text: answer, audio });
+        res.json({ text: answer, audio });
     }
-    catch (e)
+    catch
     {
-        console.error(e);
-        return res.status(500).json({
-            text: 'Ой, я трохи розгубилась 🙈 Спробуй ще раз.',
+        res.json({
+            text: 'Я тут 💜',
             audio: null
         });
     }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
 {
-    console.log(`✅ Nanny running: http://localhost:${PORT}`);
+    console.log(`✅ Nanny running on ${PORT}`);
 });
