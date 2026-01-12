@@ -2,7 +2,7 @@
   "name": "mult-nanny",
   "version": "1.0.0",
   "scripts": {
-    "server": "node server.cjs",
+    "server": "node server.js",
     "tts": "python3.11 -m uvicorn tts_server:app --host 0.0.0.0 --port 5001",
     "start": "concurrently \"npm run server\" \"npm run tts\""
   },
