@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -17,21 +18,47 @@ app.post('/api/nanny', async (req, res) =>
         const apiKey = process.env.OPENAI_API_KEY;
         const ttsUrl = process.env.TTS_URL;
 
-        const { history = [], mode = 'chat', character = 'princess' } = req.body;
+        if (!apiKey)
+        {
+            return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
+        }
 
-        const instructions = `
+        const {
+            history = [],
+            mode = 'chat',
+            character = 'princess'
+        } = req.body;
+
+        // 🧠 системні інструкції
+        const systemPrompt = `
 Ти — добра, жива мульт-няня для дитини 5–8 років.
 Говори українською мовою.
 НЕ повторюйся.
-Памʼятай, що дитина вже чула твої попередні відповіді.
-Старайся відповідати по суті питання.
+Памʼятай попередні відповіді.
+Відповідай по суті.
 Будь теплою, але не шаблонною.
-        `.trim();
+`.trim();
+
+        // 🔁 обрізаємо історію
+        const recentHistory = history.slice(-6);
+
+        // ❗ гарантуємо user-повідомлення
+        if (!recentHistory.some(m => m.role === 'user'))
+        {
+            recentHistory.push({
+                role: 'user',
+                content: 'Привіт'
+            });
+        }
+
+        const inputText = [
+            systemPrompt,
+            ...recentHistory.map(m => `${m.role}: ${m.content}`)
+        ].join('\n');
 
         const payload = {
             model: 'gpt-4.1-mini',
-            input: instructions + '\n' +
-                history.map(m => `${m.role}: ${m.content}`).join('\n')
+            input: inputText
         };
 
         const r = await fetch('https://api.openai.com/v1/responses', {
@@ -43,39 +70,63 @@ app.post('/api/nanny', async (req, res) =>
             body: JSON.stringify(payload)
         });
 
+        if (!r.ok)
+        {
+            const err = await r.text();
+            console.error('OpenAI error:', err);
+            throw new Error('OpenAI request failed');
+        }
+
         const data = await r.json();
-        const answer = data.output_text || 'Я тут, сонечко 🙂';
+        const answer = data.output_text?.trim() || 'Я тут, сонечко 🙂';
 
         let audio = null;
 
+        // 🎧 серверний TTS
         if (ttsUrl)
         {
-            const tts = await fetch(`${ttsUrl}/tts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: answer, character })
-            });
-
-            if (tts.ok)
+            try
             {
-                const ttsData = await tts.json();
-                audio = ttsData.url;
+                const tts = await fetch(`${ttsUrl}/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: answer,
+                        character
+                    })
+                });
+
+                if (tts.ok)
+                {
+                    const ttsData = await tts.json();
+                    audio = ttsData.url || null;
+                }
+            }
+            catch (e)
+            {
+                console.warn('TTS unavailable, fallback to browser voice');
             }
         }
 
-        res.json({ text: answer, audio });
+        return res.json({
+            text: answer,
+            audio
+        });
     }
-    catch
+    catch (e)
     {
-        res.json({
-            text: 'Я тут 💜',
+        console.error('Server error:', e);
+
+        return res.json({
+            text: 'Я тут 💜 Давай спробуємо ще раз.',
             audio: null
         });
     }
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () =>
 {
-    console.log(`✅ Nanny running on ${PORT}`);
+    console.log(`✅ Nanny running on port ${PORT}`);
 });
