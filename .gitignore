@@ -4,3 +4,4 @@ __pycache__/
 .DS_Store
 #Exclude the start script if it contains secrets
 start.sh
+public/audio/*.wav
