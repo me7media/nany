@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="uk">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Мульт-няня</title>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div class="wrap">
+
+        <div class="panel">
+            <div class="title">
+                Мульт-няня
+                <span class="badge" id="badge">Я готова 😊</span>
+
+                <div style="margin-top:8px; display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size:12px;">
+                        <input type="checkbox" id="voiceOn" checked />
+                        Озвучувати
+                    </label>
+                    <div id="settingsContainer" style="display: none;">
+                        <input type="password" id="apiKeyInput" placeholder="OpenAI Key для GH Pages" style="font-size: 10px; width: 100%;" />
+                    </div>
+                    <button id="toggleSettings" style="font-size: 10px; background: none; border: 1px solid #ccc; color: #666; cursor: pointer; align-self: flex-start; padding: 2px 5px;">Налаштування</button>
+                </div>
+            </div>
+
+            <!-- 🔁 Перемикач персонажа -->
+            <div class="characterBar">
+                <label class="selectLabel" for="characterSelect">Персонаж:</label>
+                <select id="characterSelect" class="select">
+                    <option value="princess" selected>👸 Принцеса</option>
+                    <option value="bunny">🐰 Зайчик</option>
+                    <option value="robot">🤖 Робот</option>
+                    <option value="dino">🦖 Динозавр</option>
+                </select>
+            </div>
+
+            <div class="nannyBox">
+                <div id="character"></div>
+
+                <div class="btnRow">
+                    <button id="btnStory">Казка</button>
+                    <button id="btnGame">Гра</button>
+                    <button id="btnCalm">Заспокоїтись</button>
+                    <button id="btnListen">🎤 Говорити</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel chat">
+            <div class="title">Чат</div>
+            <div class="log" id="log"></div>
+
+            <div class="composer">
+                <input id="input" placeholder="Напиши або скажи щось…" />
+                <button id="send">Надіслати</button>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="ttsPlayer"></audio>
+
+    <script type="module" src="main.js"></script>
+
+</body>
+
+</html>
