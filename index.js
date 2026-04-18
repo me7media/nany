@@ -17,6 +17,7 @@ export function initChat({
     const toggleSettings = document.getElementById('toggleSettings');
     const settingsContainer = document.getElementById('settingsContainer');
     const apiKeyInput = document.getElementById('apiKeyInput');
+    const premiumVoiceOn = document.getElementById('premiumVoiceOn');
 
     if (toggleSettings) {
         toggleSettings.onclick = () => {
@@ -29,6 +30,13 @@ export function initChat({
         apiKeyInput.value = localStorage.getItem('__nanny_openai_key') || '';
         apiKeyInput.onchange = () => {
             localStorage.setItem('__nanny_openai_key', apiKeyInput.value);
+        };
+    }
+
+    if (premiumVoiceOn) {
+        premiumVoiceOn.checked = localStorage.getItem('__nanny_premium_voice') === 'true';
+        premiumVoiceOn.onchange = () => {
+            localStorage.setItem('__nanny_premium_voice', premiumVoiceOn.checked);
         };
     }
 
@@ -145,6 +153,43 @@ export function initChat({
         speechSynthesis.speak(u);
     }
 
+    async function openaiSpeak(text, character) {
+        const key = localStorage.getItem('__nanny_openai_key');
+        if (!key || !text) return;
+
+        setState('loading');
+        try {
+            const voices = {
+                princess: 'shimmer',
+                bunny: 'alloy',
+                robot: 'onyx',
+                dino: 'fable'
+            };
+
+            const response = await fetch('https://api.openai.com/v1/audio/speech', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'tts-1',
+                    voice: voices[character] || 'alloy',
+                    input: text
+                })
+            });
+
+            if (!response.ok) throw new Error('TTS failed');
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            playServerAudio(url);
+        } catch (e) {
+            console.error(e);
+            browserSpeak(text); // Fallback
+        }
+    }
+
     async function send(text, mode = 'chat') {
         const clean = (text || '').trim();
         if (!clean) return;
@@ -205,6 +250,9 @@ export function initChat({
 
         if (data.audio) {
             playServerAudio(data.audio);
+        }
+        else if (localStorage.getItem('__nanny_premium_voice') === 'true' && localStorage.getItem('__nanny_openai_key')) {
+            openaiSpeak(data.text, getCharacter());
         }
         else {
             browserSpeak(data.text);
