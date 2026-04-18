@@ -1,0 +1,19 @@
+{
+  "name": "mult-nanny",
+  "version": "1.0.0",
+  "scripts": {
+    "server": "node server.cjs",
+    "tts": "python3.11 -m uvicorn tts_server:app --host 0.0.0.0 --port 5001",
+    "start": "concurrently \"npm run server\" \"npm run tts\"",
+    "predeploy": "echo 'Deploying public folder...'",
+    "deploy": "gh-pages -d public"
+  },
+  "dependencies": {
+    "express": "^4.22.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

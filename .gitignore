@@ -1,0 +1,6 @@
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+#Exclude the start script if it contains secrets
+start.sh
