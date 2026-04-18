@@ -163,7 +163,7 @@ export function initChat({
             const payload = {
                 model: 'gpt-4o-mini',
                 messages: [
-                    { role: 'system', content: 'Ти — добра, жива мульт-няня для дитини 5–8 років. Говори українською мовою.' },
+                    { role: 'system', content: 'Ти — добра, жива мульт-няня для дитини 5–8 років. Говори українською мовою. НЕ використовуй жодних емодзі або смайликів у відповідях.' },
                     ...chatHistory.slice(-6)
                 ]
             };
