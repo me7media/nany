@@ -11,6 +11,7 @@ export function initChat({
 
     let state = 'ready';
     let chatHistory = [];
+    let currentAudio = null; // Поточне аудіо
 
     // UI для налаштувань (для GH Pages)
     const toggleSettings = document.getElementById('toggleSettings');
@@ -84,32 +85,48 @@ export function initChat({
         logEl.scrollTop = logEl.scrollHeight;
     }
 
-    function playServerAudio(url) {
-        const audio = new Audio(url);
+    function stopAll() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
+        if (window.speechSynthesis) {
+            speechSynthesis.cancel();
+        }
+        mouthOff();
+        setState('ready');
+    }
 
-        audio.onplay = () => {
+    function playServerAudio(url) {
+        stopAll();
+        currentAudio = new Audio(url);
+
+        currentAudio.onplay = () => {
             mouthOn();
             setState('speaking');
         };
 
-        audio.onended = () => {
+        currentAudio.onended = () => {
             mouthOff();
             setState('ready');
+            currentAudio = null;
         };
 
-        audio.onerror = () => {
+        currentAudio.onerror = () => {
             mouthOff();
             setState('ready');
+            currentAudio = null;
         };
 
-        audio.play();
+        currentAudio.play();
     }
 
 
     function browserSpeak(text) {
         if (!voiceOnEl.checked || !window.speechSynthesis) return;
 
-        speechSynthesis.cancel();
+        stopAll();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'uk-UA';
         u.rate = 0.75;
@@ -132,6 +149,7 @@ export function initChat({
         const clean = (text || '').trim();
         if (!clean) return;
 
+        stopAll();
         addMessage(clean, 'me');
         chatHistory.push({ role: 'user', content: clean });
 
